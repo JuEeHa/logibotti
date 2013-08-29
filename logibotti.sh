@@ -51,5 +51,8 @@ do
 				LNUM=
 			fi
 			;;
-		esac
+		"#wc")
+			grep -c "$(echo "$LINE" | cut -d ':' -f 2- | cut -d ' ' -f 6-)" ~/irclogs/freenode/\#osdev-offtopic.log
+			;;
+	esac
 done
