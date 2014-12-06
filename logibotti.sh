@@ -7,29 +7,15 @@ do
 	CMD=$(echo "$LINE" | cut -d ':' -f 2- | cut -d ' ' -f 5)
 	case "$CMD" in
 		"#lastseen")
-			NICK=$(echo "$LINE" | cut -d ':' -f 2- | cut -d ' ' -f 6)
+			NICK="$(echo "$LINE" | cut -d ':' -f 2- | cut -d ' ' -f 6)"
 			if test z"$NICK" != z
 			then
-				MSG="$(grep -n "^..:.. <.$NICK>" ~/irclogs/freenode/\#osdev-offtopic.log | tail -n 1)"
+				MSG="$(egrep -n "^..:.. <.$NICK>" ~/irclogs/freenode/\#osdev-offtopic.log | tail -n 1)"
 				DAY=$(head -n $(echo $MSG | cut -d ':' -f 1) ~/irclogs/freenode/\#osdev-offtopic.log | grep '^--- Day changed ' | tail -n 1 | cut -d ' ' -f 4-)
 				TIME=$(echo "$MSG" | cut -d ':' -f 2- | cut -d ' ' -f 1)
 				echo $DAY $TIME
 			else
 				echo 'needs nick'
-			fi
-			;;
-		"#quote")
-			Q=$(echo "$LINE" | cut -d ':' -f 2- | cut -d ' ' -f 6- | sed 's/$//g')
-			if test z"$Q" != z
-			then
-				MAXNUM=$(sed '/^---/d' ~/irclogs/freenode/\#osdev-offtopic.log | sed '/^..:.. -!-/d' | grep -c "$Q")
-				LNUM=$(($RANDOM%$MAXNUM))
-				sed '/^---/d' ~/irclogs/freenode/\#osdev-offtopic.log | sed '/^..:.. -!-/d' | grep "$Q" | tail -n $LNUM | head -n 1
-			else
-				MAXNUM=$(sed '/^---/d' ~/irclogs/freenode/\#osdev-offtopic.log | sed '/^..:.. -!-/d' | wc -l)
-				LNUM=$(($RANDOM%$MAXNUM))
-				sed '/^---/d' ~/irclogs/freenode/\#osdev-offtopic.log | sed '/^..:.. -!-/d' | tail -n $LNUM | head -n 1
-				Q=
 			fi
 			;;
 		"#context")
@@ -45,14 +31,40 @@ do
 				then
 					sed '/^---/d' ~/irclogs/freenode/\#osdev-offtopic.log | sed '/^..:.. -!-/d' | head -n $MAXNUM | tail -n $SLINE | head -n 20 > ~/lblogs/$FNAME
 				else
-					sed '/^---/d' ~/irclogs/freenode/\#osdev-offtopic.log | sed '/^..:.. -!-/d' | grep "$Q" | head -n $MAXNUM | tail -n $SLINE | head -n 20 > ~/lblogs/$FNAME
+					sed '/^---/d' ~/irclogs/freenode/\#osdev-offtopic.log | sed '/^..:.. -!-/d' | fgrep "$Q" | head -n $MAXNUM | tail -n $SLINE | head -n 20 > ~/lblogs/$FNAME
 				fi
 				echo "gopher://smar.fi:7070/0/$FNAME"
 				LNUM=
 			fi
 			;;
+		"#quotes")
+			echo "gopher://smar.fi:7070/0/quote (or for gopherless people: http://smar.fi:7070/quote)"
+			;;
 		"#wc")
-			grep -c "$(echo "$LINE" | cut -d ':' -f 2- | cut -d ' ' -f 6-)" ~/irclogs/freenode/\#osdev-offtopic.log
+			egrep -c "$(echo "$LINE" | cut -d ':' -f 2- | cut -d ' ' -f 6-)" ~/irclogs/freenode/\#osdev-offtopic.log
+			;;
+		"#help")
+			topic=$(echo "$LINE" | cut -d ':' -f 2- | cut -d ' ' -f 6-)
+			case "$topic" in
+				'')
+					echo ' #addquote #lastseen #quotes #wc'
+					;;
+				'#addquote')
+					echo ' #addquote quote      add quote to #osdev-offtopic qdb (not a logibotti feature)'
+					;;
+				'#context')
+					echo ' #context message      grep for message, generate link for looking up the context'
+					;;
+				'#quotes')
+					echo ' #quotes      post link to quote database'
+					;;
+				'#lastseen')
+					echo ' #lastseen nick      tell when the person was last seen. TZ is either UTC, +2 or +3'
+					;;
+				'#wc')
+					echo ' #wc regexp      grep -c for regexp in logs'
+					;;
+			esac
 			;;
 	esac
 done
